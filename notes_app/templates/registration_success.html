@@ -1,0 +1,41 @@
+<!-- templates/registration_success.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 text-center">
+        <div class="card fun-element">
+            <div class="card-header bg-success text-white">
+                <h2><i class="fas fa-check-circle"></i> Registration Successful!</h2>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <i class="fas fa-envelope fa-4x text-primary mb-3"></i>
+                    <h3>Thank you for registering!</h3>
+                    <p class="lead">Your account is under review.</p>
+                    <p>We will get back to you within 24 hours to confirm your student profile.</p>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    Please check your email for updates.
+                </div>
+                
+                <a href="{% url 'home' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-home"></i> Return Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fun-element {
+        transition: transform 0.3s;
+    }
+    .fun-element:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}

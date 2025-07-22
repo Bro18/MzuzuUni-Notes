@@ -1,0 +1,41 @@
+/* Base styles */
+:root {
+  --primary-color: #16A34A;  /* New green color */
+  --primary-hover: #15803D;  /* Slightly darker for hover states */
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* Navbar */
+.navbar {
+  background-color: var(--primary-color);
+}
+
+/* Links */
+a {
+  color: var(--primary-color);
+}
+
+a:hover {
+  color: var(--primary-hover);
+}
+
+/* Custom components */
+.alert-success {
+  background-color: #DCFCE7;  /* Light green background */
+  border-color: #BBF7D0;      /* Border color */
+  color: #166534;            /* Dark green text */
+}
