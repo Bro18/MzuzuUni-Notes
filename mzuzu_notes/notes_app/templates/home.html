@@ -1,0 +1,16 @@
+<!-- home.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <h1 class="display-4 mb-4">Welcome to Mzuzu University Notes</h1>
+        <p class="lead">Access study materials for your program, year, and semester</p>
+        
+        <div class="mt-5">
+            <a href="{% url 'register' %}" class="btn btn-primary btn-lg fun-element me-3">Get Started</a>
+            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg fun-element">Login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
