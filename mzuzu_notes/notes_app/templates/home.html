@@ -5,11 +5,25 @@
 <div class="row justify-content-center">
     <div class="col-md-8 text-center">
         <h1 class="display-4 mb-4">Welcome to Mzuzu University Notes</h1>
-        <p class="lead">Access study materials for your program, year, and semester</p>
+        <p class="lead">
+            {% if user.is_authenticated %}
+                Access your study materials below
+            {% else %}
+                Access study materials for your program, year, and semester
+            {% endif %}
+        </p>
         
         <div class="mt-5">
-            <a href="{% url 'register' %}" class="btn btn-primary btn-lg fun-element me-3">Get Started</a>
-            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg fun-element">Login</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'notes' %}" class="btn btn-primary btn-lg me-3">Access Notes</a>
+                <form action="{% url 'logout' %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-lg">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'register' %}" class="btn btn-primary btn-lg me-3">Get Started</a>
+                <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">Login</a>
+            {% endif %}
         </div>
     </div>
 </div>

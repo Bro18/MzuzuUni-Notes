@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -64,7 +68,7 @@ ROOT_URLCONF = 'mzuzu_notes.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -128,5 +132,18 @@ STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+
+# Add at the bottom of the file:
+LOGIN_REDIRECT_URL = '/notes/'  # Redirect to /notes/ after login
+LOGIN_URL = '/login/'           # URL to redirect unauthenticated users
+LOGOUT_REDIRECT_URL = '/logout_confirmation/' # Redirect to /logout/ after logout
+
+# Ensure these settings are set:
+SESSION_COOKIE_AGE = 1800  # 30-min session expiry (optional)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Session ends when browser closes
+SESSION_COOKIE_SECURE = True  # If using HTTPS
+CSRF_COOKIE_SECURE = True  # If using HTTPS
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access
+CSRF_COOKIE_HTTPONLY = True  # Extra security
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
