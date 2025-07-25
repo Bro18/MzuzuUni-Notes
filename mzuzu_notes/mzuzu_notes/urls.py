@@ -4,6 +4,8 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.views.decorators.cache import never_cache
 from notes_app import views
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -23,4 +25,4 @@ urlpatterns = [
             template_name='login.html'
         ), 
         name='login'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

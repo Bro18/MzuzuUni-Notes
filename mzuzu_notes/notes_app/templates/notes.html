@@ -1,52 +1,101 @@
-<!-- notes.html -->
 {% extends 'base.html' %}
 
 {% block content %}
 <div class="row">
+    <!-- Left Sidebar - Profile Information -->
     <div class="col-md-3">
         <div class="card fun-element mb-4">
             <div class="card-header bg-primary text-white">
-                <h5>My Profile</h5>
+                <h5>{{ request.user.username }}'s Profile</h5>
             </div>
             <div class="card-body">
-                <p><strong>Program:</strong> {{ profile.program.name }}</p>
-                <p><strong>Year:</strong> Year {{ profile.year_of_study }}</p>
-                <p><strong>Semester:</strong> {{ profile.current_semester.name }}</p>
-            </div>
-        </div>
-        <div>
-            <div>
+                {% if profile %}
+                    <p><strong>Program:</strong> {{ profile.program.name }}</p>
+                    <p><strong>Year:</strong> Year {{ profile.year_of_study }}</p>
+                    <p><strong>Semester:</strong> {{ profile.current_semester.name }}</p>
+                {% else %}
+                    <p class="text-danger">Profile information not available</p>
+                {% endif %}
             </div>
         </div>
     </div>
-    
+
+    <!-- Main Content Area -->
     <div class="col-md-9">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3>Available Notes</h3>
+            <div class="search-container">
+                <div class="input-group">
+                    <input type="text" id="note-search" class="form-control" placeholder="Search notes..." aria-label="Search notes">
+                    <button class="btn btn-outline-secondary" type="button" id="search-button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" type="button" id="clear-search" style="display:none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
         </div>
-        
+
         {% if course_notes %}
             {% for course_data in course_notes %}
-            <div class="course-section mb-4">
+            <div class="course-section mb-4" data-course-code="{{ course_data.course.code|lower }}" data-course-name="{{ course_data.course.name|lower }}">
                 <div class="card fun-element">
                     <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">{{ course_data.course.name }} ({{ course_data.course.code }})</h4>
-                        <span class="badge bg-light text-dark">{{ course_data.notes|length }} notes</span>
+                        <h4 class="mb-0 course-title">{{ course_data.course.name }} ({{ course_data.course.code }})</h4>
+                        <span class="badge bg-light text-dark">{{ course_data.notes|length }} note{{ course_data.notes|length|pluralize }}</span>
                     </div>
                     <div class="card-body">
                         {% for note in course_data.notes %}
-                        <div class="note-item mb-3 pb-3 border-bottom">
+                        <div class="note-item mb-3 pb-3 border-bottom" data-note-title="{{ note.title|lower }}" data-note-content="{{ note.extracted_text|default:''|lower }}">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <h5>{{ note.title }}</h5>
+                                    <p class="note-meta small mb-1">
+                                        {{ note.upload_date|date:"M d, Y" }} | {{ note.pdf_file.size|filesizeformat }}
+                                        {% if not note.pdf_file.name|lower|slice:'-4:' == '.pdf' %}
+                                        <span class="badge bg-warning text-dark ms-2">Non-PDF File</span>
+                                        {% endif %}
+                                    </p>
                                 </div>
                                 <div class="btn-group">
-                                    <a href="{{ note.pdf_file.url }}" class="btn btn-sm btn-primary" 
-                                       target="_blank" download>
+                                    <a href="{{ note.pdf_file.url }}" class="btn btn-sm btn-primary" download>
                                         <i class="fas fa-download"></i> Download
                                     </a>
+                                    {% if note.pdf_file.name|lower|slice:'-4:' == '.pdf' %}
+                                    <button class="btn btn-sm btn-outline-secondary toggle-preview" 
+                                            data-note-id="{{ note.id }}"
+                                            data-pdf-url="{{ note.pdf_file.url }}">
+                                        <i class="fas fa-eye"></i> Preview
+                                    </button>
+                                    {% endif %}
                                 </div>
                             </div>
+                            
+                            {% if note.pdf_file.name|lower|slice:'-4:' == '.pdf' %}
+                            <!-- PDF Preview Container -->
+                            <div class="pdf-preview-container mt-2" id="preview-{{ note.id }}" style="display:none;">
+                                <div class="pdf-controls d-flex justify-content-between align-items-center mb-2">
+                                    <div class="page-navigation">
+                                        <button class="btn btn-sm btn-outline-secondary prev-page" disabled>
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                        <span class="page-info mx-2">Page 1 of 1</span>
+                                        <button class="btn btn-sm btn-outline-secondary next-page" disabled>
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <a href="{{ note.pdf_file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                            <i class="fas fa-external-link-alt"></i> Fullscreen
+                                        </a>
+                                    </div>
+                                </div>
+                                <div id="pdf-viewer-{{ note.id }}" class="pdf-viewer-container">
+                                    <div class="pdf-pages-container"></div>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
@@ -59,44 +108,323 @@
                     <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
                     <h4>No Notes Available</h4>
                     <p class="text-muted">
-                        No notes found for {{ selected_program.name }}, 
-                        Year {{ selected_year }}, 
-                        {{ selected_semester.name }}
+                        No notes found for your current program and semester
                     </p>
-                    <a href="{% url 'notes' %}" class="btn btn-primary mt-2">
-                        <i class="fas fa-sync-alt"></i> Reset Filters
-                    </a>
                 </div>
             </div>
         {% endif %}
     </div>
 </div>
 
+<!-- Include PDF.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
 <style>
+    /* Course and Note Styling */
+    .course-title {
+        color: white;
+    }
+    
+    .note-meta {
+        color: #16A34A !important;
+    }
+
+    /* Layout and Structure */
     .course-section {
         margin-bottom: 2rem;
     }
     .note-item {
         padding-bottom: 1rem;
     }
+    
+    /* Card Styling */
     .fun-element {
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s;s
         border-radius: 10px;
         overflow: hidden;
+        border: none;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     .fun-element:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
-    .note-preview {
-        max-height: 200px;
+    
+    /* PDF Viewer Styling */
+    .pdf-viewer-container {
+        height: 500px;
         overflow-y: auto;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        position: relative;
     }
-    .filter-form {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
+    .pdf-pages-container {
+        padding: 10px;
+    }
+    .pdf-page {
+        margin-bottom: 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    /* Badge Styling */
+    .badge {
+        font-weight: 500;
+        padding: 5px 10px;
+    }
+    
+    /* PDF Preview Controls */
+    .pdf-preview-container {
+        transition: all 0.3s ease;
+    }
+    .pdf-controls {
+        padding: 5px;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+    .page-info {
+        font-size: 0.9em;
+    }
+    
+    /* Search Styling */
+    .search-container {
+        width: 300px;
+    }
+    .search-match {
+        background-color: #fffde7;
+        font-weight: bold;
     }
 </style>
 
+<script>
+// Initialize PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+
+// Store PDF documents and current pages
+const pdfDocuments = {};
+const currentPages = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('note-search');
+    const searchButton = document.getElementById('search-button');
+    const clearButton = document.getElementById('clear-search');
+    
+    function performSearch() {
+        const query = searchInput.value.trim().toLowerCase();
+        clearButton.style.display = query ? 'block' : 'none';
+        
+        if (query === '') {
+            // Show all notes if search is empty
+            document.querySelectorAll('.course-section, .note-item').forEach(el => {
+                el.style.display = '';
+            });
+            document.querySelectorAll('.search-match').forEach(el => {
+                el.classList.remove('search-match');
+            });
+            return;
+        }
+        
+        let hasMatches = false;
+        
+        // Search through courses and notes
+        document.querySelectorAll('.course-section').forEach(courseSection => {
+            const courseCode = courseSection.dataset.courseCode;
+            const courseName = courseSection.dataset.courseName;
+            let courseHasMatches = false;
+            
+            // Search notes within this course
+            courseSection.querySelectorAll('.note-item').forEach(noteItem => {
+                const noteTitle = noteItem.dataset.noteTitle;
+                const noteContent = noteItem.dataset.noteContent;
+                const matches = noteTitle.includes(query) || noteContent.includes(query) || 
+                               courseCode.includes(query) || courseName.includes(query);
+                
+                if (matches) {
+                    courseHasMatches = true;
+                    noteItem.style.display = '';
+                    
+                    // Highlight matching text
+                    const titleElement = noteItem.querySelector('h5');
+                    const titleText = titleElement.textContent;
+                    const regex = new RegExp(query, 'gi');
+                    titleElement.innerHTML = titleText.replace(regex, match => 
+                        `<span class="search-match">${match}</span>`);
+                } else {
+                    noteItem.style.display = 'none';
+                }
+            });
+            
+            if (courseHasMatches) {
+                courseSection.style.display = '';
+                hasMatches = true;
+                
+                // Highlight course name if it matches
+                const courseNameElement = courseSection.querySelector('.card-header h4');
+                const courseNameText = courseNameElement.textContent;
+                const regex = new RegExp(query, 'gi');
+                courseNameElement.innerHTML = courseNameText.replace(regex, match => 
+                    `<span class="search-match">${match}</span>`);
+            } else {
+                courseSection.style.display = 'none';
+            }
+        });
+        
+        // Show message if no results found
+        if (!hasMatches) {
+            const noResults = document.createElement('div');
+            noResults.className = 'alert alert-info text-center my-4';
+            noResults.innerHTML = 'No notes found matching your search.';
+            document.querySelector('.col-md-9').appendChild(noResults);
+            setTimeout(() => noResults.remove(), 3000);
+        }
+    }
+    
+    // Event listeners for search
+    searchInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+    
+    searchButton.addEventListener('click', performSearch);
+    
+    clearButton.addEventListener('click', function() {
+        searchInput.value = '';
+        performSearch();
+    });
+    
+    // Toggle preview container visibility
+    document.querySelectorAll('.toggle-preview').forEach(button => {
+        button.addEventListener('click', function() {
+            const noteId = this.getAttribute('data-note-id');
+            const previewContainer = document.getElementById(`preview-${noteId}`);
+            const isHidden = previewContainer.style.display === 'none';
+            
+            if (isHidden) {
+                // Show preview container
+                previewContainer.style.display = 'block';
+                
+                // Update button
+                const icon = this.querySelector('i');
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+                this.innerHTML = '<i class="fas fa-eye-slash"></i> Hide';
+                
+                // Load PDF if not already loaded
+                if (!pdfDocuments[noteId]) {
+                    loadPDF(noteId, this.getAttribute('data-pdf-url'));
+                }
+            } else {
+                // Hide preview container
+                previewContainer.style.display = 'none';
+                
+                // Update button
+                const icon = this.querySelector('i');
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+                this.innerHTML = '<i class="fas fa-eye"></i> Preview';
+            }
+        });
+    });
+
+    // Page navigation handlers
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.prev-page')) {
+            const container = e.target.closest('.pdf-preview-container');
+            const noteId = container.id.replace('preview-', '');
+            navigatePage(noteId, -1);
+        }
+        if (e.target.closest('.next-page')) {
+            const container = e.target.closest('.pdf-preview-container');
+            const noteId = container.id.replace('preview-', '');
+            navigatePage(noteId, 1);
+        }
+    });
+});
+
+async function loadPDF(noteId, pdfUrl) {
+    const viewerContainer = document.getElementById(`pdf-viewer-${noteId}`);
+    const pagesContainer = viewerContainer.querySelector('.pdf-pages-container');
+    const pageInfo = viewerContainer.closest('.pdf-preview-container').querySelector('.page-info');
+    const prevBtn = viewerContainer.closest('.pdf-preview-container').querySelector('.prev-page');
+    const nextBtn = viewerContainer.closest('.pdf-preview-container').querySelector('.next-page');
+    
+    // Show loading state
+    pagesContainer.innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Loading PDF...</p></div>';
+    
+    try {
+        // Load the PDF document
+        const pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+        pdfDocuments[noteId] = pdfDoc;
+        currentPages[noteId] = 1;
+        
+        // Update page info
+        pageInfo.textContent = `Page 1 of ${pdfDoc.numPages}`;
+        
+        // Enable/disable navigation buttons
+        prevBtn.disabled = true;
+        nextBtn.disabled = pdfDoc.numPages <= 1;
+        
+        // Render all pages for scrolling
+        pagesContainer.innerHTML = '';
+        
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const viewport = page.getViewport({ scale: 1.5 });
+            
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'pdf-page';
+            pageDiv.id = `page-${noteId}-${i}`;
+            
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            pageDiv.appendChild(canvas);
+            pagesContainer.appendChild(pageDiv);
+            
+            await page.render({
+                canvasContext: context,
+                viewport: viewport
+            }).promise;
+        }
+        
+    } catch (error) {
+        pagesContainer.innerHTML = `
+            <div class="alert alert-danger text-center py-3">
+                <i class="fas fa-exclamation-triangle"></i> Could not load PDF<br>
+                <a href="${pdfUrl}" class="btn btn-sm btn-primary mt-2" target="_blank">
+                    Open in New Tab
+                </a>
+            </div>
+        `;
+        console.error('PDF loading error:', error);
+    }
+}
+
+function navigatePage(noteId, direction) {
+    const pdfDoc = pdfDocuments[noteId];
+    if (!pdfDoc) return;
+    
+    const newPage = currentPages[noteId] + direction;
+    if (newPage < 1 || newPage > pdfDoc.numPages) return;
+    
+    currentPages[noteId] = newPage;
+    
+    // Update UI
+    const viewerContainer = document.getElementById(`pdf-viewer-${noteId}`);
+    const pageInfo = viewerContainer.closest('.pdf-preview-container').querySelector('.page-info');
+    const prevBtn = viewerContainer.closest('.pdf-preview-container').querySelector('.prev-page');
+    const nextBtn = viewerContainer.closest('.pdf-preview-container').querySelector('.next-page');
+    
+    pageInfo.textContent = `Page ${newPage} of ${pdfDoc.numPages}`;
+    prevBtn.disabled = newPage === 1;
+    nextBtn.disabled = newPage === pdfDoc.numPages;
+    
+    // Scroll to the page
+    const pageElement = document.getElementById(`page-${noteId}-${newPage}`);
+    if (pageElement) {
+        pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+</script>
 {% endblock %}
